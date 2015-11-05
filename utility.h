@@ -9,14 +9,18 @@
 #include <cmath>
 #include <algorithm>
 #include <vector>
+#include <fstream>
+#include <string>
+#include <stdlib.h>
 
 using namespace std;
 
 /* 最近点对问题辅助 */
-typedef struct {
+typedef struct ppair{
     int p1[2];
     int p2[2];
     float distance;
+    struct ppair * next; // 用来储存多个相同距离的点对
 } pointpair;
 typedef struct {
     int dotPos; // 记录边界内部点集和起始位置
@@ -39,6 +43,14 @@ private:
     int ** sortedX;
     int ** sortedY;
 
+    vector<int **> initialDotArr;
+    int arrNum;
+    int *arrSize;
+    unsigned long currProcess;
+
+    ifstream inputFile;
+    ofstream outputFile;
+
     void deepCopy(int ** in, int ** out, int sum, int start=0);
 
     // 取 >= start 和 < end的点数目
@@ -55,6 +67,8 @@ private:
 public:
     // 初始化函数
     NearestPoint(int ** points, int sum) {
+        arrNum = 1;
+        currProcess = 0;
         pSum = sum;
 
         sortedX = initArray(sum, 2);
@@ -63,12 +77,64 @@ public:
         deepCopy(points, sortedX, sum);
         deepCopy(points, sortedY, sum);
 
-        // 先按照x进行排序
+        // 先按照x进行排序 使用内置的排序算法
         sort(sortedX, sortedX+sum, sortFunc_x);
         sort(sortedY, sortedY+sum, sortFunc_y);
     };
+    // 从文件中初始化数据
+    NearestPoint(char * path) {
+        string s;
+        inputFile.open(path);
+
+        if (inputFile.fail()) {
+            cout << "Open file failed!" << endl;
+            exit(-1);
+        }
+        getline(inputFile, s);
+        arrNum = atoi(s.c_str()); // 如果读取失败结果是0 所以循环没问题
+
+        if (arrNum == 0) {
+            cout << "File format is wrong!" << endl;
+            exit(-1);
+        }
+
+        arrSize = new int[arrNum];
+
+        for (int i=0; i != arrNum; ++i) {
+            // 获取该组的点数
+            getline(inputFile, s);
+            arrSize[i] = atoi(s.c_str());
+            // 对这么多点进行操作
+            int ** tmpDots = initArray(arrSize[i], 2);
+            for (int j=0; j != arrSize[i]; ++j) {
+                getline(inputFile, s);
+                sscanf(s.c_str(), "%d%*[^0-9]%d", &tmpDots[j][0], &tmpDots[j][1]);
+            }
+            initialDotArr.push_back(tmpDots);
+        }
+        currProcess = 0;
+        int sum = arrSize[currProcess];
+
+        pSum = sum;
+
+        sortedX = initArray(sum, 2);
+        sortedY = initArray(sum, 2);
+
+        deepCopy(initialDotArr.at(currProcess), sortedX, sum);
+        deepCopy(initialDotArr.at(currProcess), sortedY, sum);
+
+        // 先按照x进行排序 使用内置的排序算法
+        sort(sortedX, sortedX+sum, sortFunc_x);
+        sort(sortedY, sortedY+sum, sortFunc_y);
+    }
+    // 析构
+/*    ~NearestPoint() {
+        freeArray(sortedX, pSum);
+        freeArray(sortedY, pSum);
+    }*/
     // 获取最近点
     void getNearestPoint(pointpair &pp);
+    void outputFile(char * path);
     void printSortedX();
     void printSortedY();
 };

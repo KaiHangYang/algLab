@@ -3,6 +3,18 @@
 //
 
 #include "utility.h"
+
+
+void freeppArr(pointpair * pp) {
+    pointpair * ph = pp->next, * tmp;
+
+    free(pp);
+    while (ph != NULL) {
+        tmp = ph;
+        ph = ph->next;
+        free(tmp);
+    }
+}
 int ** initArray(int m, int n) {
     int ** tmp = new int* [m];
 
@@ -111,6 +123,15 @@ void NearestPoint::getMinMerge(const bound &bdl, const bound &bdr, const pointpa
     bmerger.left = splitX;
     bmerger.right = splitX + dis;
 
+    // 在这里如果边界变的太大的话就会出问题
+    if (bmergel.left < bdl.left) {
+        bmergel.left = bdl.left;
+    }
+
+    if (bmerger.right > bdr.right) {
+        bmerger.right = bdr.right;
+    }
+
     caleBound(bmergel);
     caleBound(bmerger);
 
@@ -118,21 +139,24 @@ void NearestPoint::getMinMerge(const bound &bdl, const bound &bdr, const pointpa
     vector<int> pyl, pyr;
     // 若是没有最小的话就设置result的长度为INFINITY
     for (int i=0; i != pSum; ++i) {
-        for (int j=bmergel.dotPos; j != bmergel.sum; ++j) {
-            if (sortedY[i][0] == sortedX[j][0] && sortedY[i][1] == sortedX[j][1]) {
+        for (int j=0, p=bmergel.dotPos; j != bmergel.sum; ++j, ++p) {
+            if (sortedY[i][0] == sortedX[p][0] && sortedY[i][1] == sortedX[p][1]) {
                 pyl.push_back(i);
             }
         }
 
-        for (int j=bmerger.dotPos; j != bmerger.sum; ++j) {
-            if (sortedY[i][0] == sortedX[j][0] && sortedY[i][1] == sortedX[j][1]) {
+        for (int j=0, p=bmerger.dotPos; j != bmerger.sum; ++j, ++p) {
+            if (sortedY[i][0] == sortedX[p][0] && sortedY[i][1] == sortedX[p][1]) {
                 pyr.push_back(i);
             }
         }
     }
+
     // 填装完毕,可以开始求值了;
     float minSize = INFINITY;
     int minppy[2];
+    minppy[0] = -1;
+    minppy[1] = -1;
 
     for (unsigned long i=0; i != pyl.size(); ++i) {
         int * dot1 = sortedY[pyl.at(i)];
@@ -161,8 +185,16 @@ void NearestPoint::getMinMerge(const bound &bdl, const bound &bdr, const pointpa
     }
     // 获取最小的点之后
     result.distance = minSize;
-    dotCpy(result.p1, sortedY[minppy[0]]);
-    dotCpy(result.p2, sortedY[minppy[1]]);
+
+    if (minppy[0] == -1 || minppy[1] == -1) {
+        int tmp[2] = {-1, -1};
+        dotCpy(result.p1, tmp);
+        dotCpy(result.p2, tmp);
+    }
+    else {
+        dotCpy(result.p1, sortedY[minppy[0]]);
+        dotCpy(result.p2, sortedY[minppy[1]]);
+    }
 
 }
 
@@ -254,4 +286,12 @@ void NearestPoint::printSortedY() {
     for (int i=0; i != pSum; ++i) {
         cout << sortedY[i][0] << ", " << sortedY[i][1] << endl;
     }
+}
+void NearestPoint::outputFile(char * path) {
+    outputFile.open(path);
+    if (outputFile.fail()) {
+        cout << "Open output File failed!" << endl;
+        exit(-1);
+    }
+
 }
