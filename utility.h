@@ -58,11 +58,11 @@ private:
     // 返回值是是否分化成功等
     int split(const bound &bdin, bound &bdleft, bound &bdright);
     // 获取区间内部最小距离
-    void getMinPart(bound &bd, pointpair &result);
+    void getMinPart(bound &bd, pointpair *result);
     // 获取合并过程中的最小点
-    void getMinMerge(const bound &bdl, const bound &bdr, const pointpair &pp1, const pointpair &pp2 ,pointpair &result);
+    void getMinMerge(const bound &bdl, const bound &bdr, const pointpair *pp1, const pointpair *pp2 ,pointpair *result);
     // 获取三个点集中最小的点
-    int getMinPointPair(pointpair &pp1, pointpair &pp2, pointpair &pp3);
+    int getMinPointPair(pointpair *pp1, pointpair *pp2, pointpair *pp3);
 
 public:
     // 初始化函数
@@ -133,8 +133,8 @@ public:
         freeArray(sortedY, pSum);
     }*/
     // 获取最近点
-    void getNearestPoint(pointpair &pp);
-    void outputFile(char * path);
+    void getNearestPoint(pointpair *pp);
+    void output(char * path);
     void printSortedX();
     void printSortedY();
 };
