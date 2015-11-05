@@ -16,14 +16,11 @@ int main() {
     tmp[2][1] = 3;
     tmp[3][1] = 4;
 
-    for (int i=0; i != 4; ++i) {
-        cout << tmp[i][0] << endl;
-        cout << tmp[i][1] << endl;
-    }
-
     NearestPoint np(tmp, 4);
     freeArray(tmp, 4);
 
+    pointpair pp;
+    np.getNearestPoint(pp);
 
     return 0;
 }

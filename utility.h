@@ -8,6 +8,7 @@
 #include <iostream>
 #include <cmath>
 #include <algorithm>
+#include <vector>
 
 using namespace std;
 
@@ -26,8 +27,8 @@ typedef struct {
 
 int ** initArray(int m, int n);
 void freeArray(int ** arr, int m);
-//bool sortFunc_x(const int *a, const int *b);
-//bool sortFunc_y(const int *a, const int *b);
+bool sortFunc_x(const int *a, const int *b);
+bool sortFunc_y(const int *a, const int *b);
 
 // 距离没有开平方，最后再求
 class NearestPoint {
@@ -41,15 +42,15 @@ private:
     void deepCopy(int ** in, int ** out, int sum, int start=0);
 
     // 取 >= start 和 < end的点数目
-    void getSum(bound &bd);
+    void caleBound(bound &bd);
     // 返回值是是否分化成功等
     int split(const bound &bdin, bound &bdleft, bound &bdright);
     // 获取区间内部最小距离
     void getMinPart(bound &bd, pointpair &result);
     // 获取合并过程中的最小点
-    void getMinMerge(bound &bd, const pointpair &pp1, const pointpair &pp2 ,pointpair &result);
+    void getMinMerge(const bound &bdl, const bound &bdr, const pointpair &pp1, const pointpair &pp2 ,pointpair &result);
     // 获取三个点集中最小的点
-    pointpair &getMinPointPair(const pointpair &pp1, const pointpair &pp2, const pointpair &pp3);
+    int getMinPointPair(pointpair &pp1, pointpair &pp2, pointpair &pp3);
 
 public:
     // 初始化函数
@@ -66,7 +67,10 @@ public:
         sort(sortedX, sortedX+sum, sortFunc_x);
         sort(sortedY, sortedY+sum, sortFunc_y);
     };
-    int getNearestPoint(float *dis);
+    // 获取最近点
+    void getNearestPoint(pointpair &pp);
+    void printSortedX();
+    void printSortedY();
 };
 
 #endif //ALGLAB_UTILITY_H

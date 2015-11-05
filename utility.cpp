@@ -44,13 +44,25 @@ void NearestPoint::deepCopy(int **in, int **out, int sum, int start) {
 }
 
 
-void NearestPoint::getSum(bound &bd) {
+void NearestPoint::caleBound(bound &bd) {
     bd.sum = 0;
-    for (int i = static_cast<int>(floor(bd.left)), pos = bd.dotPos; i < static_cast<int>(ceil(bd.right)); ++i) {
-        if (pos < pSum && pos >= 0&& sortedX[pos][0]) {
+
+    for (int i=0; i != pSum; ++i) {
+        if (sortedX[i][0] >= bd.left && sortedX[i][0] <= bd.right) {
+            if (bd.sum == 0) {
+                bd.dotPos = i;
+            }
             ++bd.sum;
         }
+        else if (sortedX[i][0] > bd.right){
+            break;
+        }
     }
+//    for (int i = static_cast<int>(floor(bd.left)), pos = bd.dotPos; i < static_cast<int>(ceil(bd.right)); ++i) {
+//        if (pos < pSum && pos >= 0 && sortedX[pos][0]) {
+//            ++bd.sum;
+//        }
+//    }
 }
 
 int NearestPoint::split(const bound &bdin, bound &bdleft, bound &bdright) {
@@ -64,30 +76,93 @@ int NearestPoint::split(const bound &bdin, bound &bdleft, bound &bdright) {
     }
     else {
         // 成功，进行划分
-        int pos = bdin.dotPos + bdin.sum/2;
+        int pos = bdin.dotPos + bdin.sum/2 - 1;
         float splitLine = (sortedX[pos][0] + sortedX[pos+1][0]) / 2.0;
 
-        bdleft.dotPos = bdin.dotPos;
+//        bdleft.dotPos = bdin.dotPos;
         bdleft.left = bdin.left;
         bdleft.right = splitLine;
-        getSum(bdleft);
+        caleBound(bdleft);
 
-        bdright.dotPos = bdin.dotPos+bdin.sum;
+//        bdright.dotPos = bdin.dotPos+bdin.sum;
         bdright.left = splitLine;
         bdright.right = bdin.right;
-        bdright.sum = bdin.sum - bdleft.sum;
+        caleBound(bdright);
+
         return 1;
     }
 }
-void NearestPoint::getMinMerge(bound &bd, const pointpair &pp1, const pointpair &pp2, pointpair &result) {
-    // 求合并的最小值
-    float dis;
+void NearestPoint::getMinMerge(const bound &bdl, const bound &bdr, const pointpair &pp1, const pointpair &pp2, pointpair &result) {
+    // 求合并的最小值 核心
+    float dis, splitX;
     if (pp1.distance < pp2.distance) {
         dis = pp1.distance;
     }
     else {
         dis = pp2.distance;
     }
+
+    // 获取边界条件
+    bound bmergel, bmerger;
+    splitX = bdl.right;
+
+    bmergel.left = splitX - dis;
+    bmergel.right = splitX;
+    bmerger.left = splitX;
+    bmerger.right = splitX + dis;
+
+    caleBound(bmergel);
+    caleBound(bmerger);
+
+    // 计算边界内部的最小边界
+    vector<int> pyl, pyr;
+    // 若是没有最小的话就设置result的长度为INFINITY
+    for (int i=0; i != pSum; ++i) {
+        for (int j=bmergel.dotPos; j != bmergel.sum; ++j) {
+            if (sortedY[i][0] == sortedX[j][0] && sortedY[i][1] == sortedX[j][1]) {
+                pyl.push_back(i);
+            }
+        }
+
+        for (int j=bmerger.dotPos; j != bmerger.sum; ++j) {
+            if (sortedY[i][0] == sortedX[j][0] && sortedY[i][1] == sortedX[j][1]) {
+                pyr.push_back(i);
+            }
+        }
+    }
+    // 填装完毕,可以开始求值了;
+    float minSize = INFINITY;
+    int minppy[2];
+
+    for (unsigned long i=0; i != pyl.size(); ++i) {
+        int * dot1 = sortedY[pyl.at(i)];
+        for (unsigned long j=0; j != pyr.size(); ++j) {
+            int * dot2 = sortedY[pyr.at(j)];
+
+            if (dot2[1] - dot1[1] > dis) {
+                // 如果点在左边点之上 直接跳过后面的
+                break;
+            }
+            else if (abs(dot2[1] - dot1[1]) > dis) {
+                // 点不在范围内 跳过当前的点
+                continue;
+            }
+            else {
+                // 如果在界限内部的话就开始计算
+                float len = pow(dot1[0] - dot2[0], 2) + pow(dot1[1] - dot2[1], 2);
+                if (len < minSize) {
+                    // 保存最小点
+                    minSize = len;
+                    minppy[0] = pyl.at(i);
+                    minppy[1] = pyr.at(j);
+                }
+            }
+        }
+    }
+    // 获取最小的点之后
+    result.distance = minSize;
+    dotCpy(result.p1, sortedY[minppy[0]]);
+    dotCpy(result.p2, sortedY[minppy[1]]);
 
 }
 
@@ -115,22 +190,68 @@ void NearestPoint::getMinPart(bound &bd, pointpair &result) {
     else {
         // 否则就先分割然后分别求
         bound bdleft, bdright;
-        pointpair ppleft, ppright;
+        pointpair ppleft, ppright, ppmerge;
 
         int flag = split(bd, bdleft, bdright);
         getMinPart(bdleft, ppleft);
         getMinPart(bdright, ppright);
 
         // 分割完毕 求分割边界的最小值
+        getMinMerge(bdleft, bdright, ppleft, ppright, ppmerge);
+        int mflag = getMinPointPair(ppleft, ppmerge, ppright);
 
-
+        if (mflag == -1) {
+            // 左边的值为最小的点
+            result.distance = ppleft.distance;
+            dotCpy(result.p1, ppleft.p1);
+            dotCpy(result.p2, ppleft.p2);
+        }
+        else if (mflag == 0) {
+            // 中间最小值
+            result.distance = ppmerge.distance;
+            dotCpy(result.p1, ppmerge.p1);
+            dotCpy(result.p2, ppmerge.p2);
+        }
+        else {
+            // 右边的最小值
+            result.distance = ppright.distance;
+            dotCpy(result.p1, ppright.p1);
+            dotCpy(result.p2, ppright.p2);
+        }
     }
 }
 
-pointpair & NearestPoint::getMinPointPair(const pointpair &pp1, const pointpair &pp2, const pointpair &pp3) {
-
+int NearestPoint::getMinPointPair(pointpair &pp1, pointpair &pp2, pointpair &pp3) {
+    if (pp1.distance <= pp2.distance && pp1.distance <= pp3.distance) {
+        return -1;
+    }
+    else if (pp2.distance <= pp1.distance && pp2.distance <= pp3.distance) {
+        return 0;
+    }
+    else if (pp3.distance <= pp1.distance && pp3.distance <= pp2.distance) {
+        return 1;
+    }
+    // 返回2 表示出错
+    return 2;
 }
 
-int NearestPoint::getNearestPoint(const bound & bd) {
+void NearestPoint::getNearestPoint(pointpair &pp) {
 
+    bound bd;
+    bd.sum = pSum;
+    bd.left = sortedX[0][0] - 0.5;
+    bd.right = sortedX[pSum - 1][0] + 0.5;
+    bd.dotPos = 0;
+
+    getMinPart(bd, pp);
+}
+void NearestPoint::printSortedX() {
+    for (int i=0; i != pSum; ++i) {
+        cout << sortedX[i][0] << ", " << sortedX[i][1] << endl;
+    }
+}
+void NearestPoint::printSortedY() {
+    for (int i=0; i != pSum; ++i) {
+        cout << sortedY[i][0] << ", " << sortedY[i][1] << endl;
+    }
 }
