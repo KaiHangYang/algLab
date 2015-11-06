@@ -143,4 +143,9 @@ public:
     void printData();
 };
 
+class BigNum {
+private:
+public:
+
+};
 #endif //ALGLAB_UTILITY_H
