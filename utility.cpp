@@ -8,11 +8,11 @@
 void freeppArr(pointpair * pp) {
     pointpair * ph = pp->next, * tmp;
 
-    free(pp);
+    delete pp;
     while (ph != NULL) {
         tmp = ph;
         ph = ph->next;
-        free(tmp);
+        delete tmp;
     }
 }
 int ** initArray(int m, int n) {
@@ -155,9 +155,10 @@ void NearestPoint::getMinMerge(const bound &bdl, const bound &bdr, const pointpa
 
     // 填装完毕,可以开始求值了;
     float minSize = INFINITY;
-    int minppy[2];
-    minppy[0] = -1;
-    minppy[1] = -1;
+    int minppy[pyr.size()*pyl.size()][2];
+    int currPos = 0;
+    minppy[currPos][0] = -1;
+    minppy[currPos][1] = -1;
 
     for (unsigned long i=0; i != pyl.size(); ++i) {
         int * dot1 = sortedY[pyl.at(i)];
@@ -177,9 +178,15 @@ void NearestPoint::getMinMerge(const bound &bdl, const bound &bdr, const pointpa
                 float len = pow(dot1[0] - dot2[0], 2) + pow(dot1[1] - dot2[1], 2);
                 if (len < minSize) {
                     // 保存最小点
+                    currPos = 0;
                     minSize = len;
-                    minppy[0] = pyl.at(i);
-                    minppy[1] = pyr.at(j);
+                    minppy[currPos][0] = pyl.at(i);
+                    minppy[currPos][1] = pyr.at(j);
+                }
+                else if (len == minSize) {
+                    ++currPos;
+                    minppy[currPos][0] = pyl.at(i);
+                    minppy[currPos][1] = pyr.at(j);
                 }
             }
         }
@@ -187,14 +194,25 @@ void NearestPoint::getMinMerge(const bound &bdl, const bound &bdr, const pointpa
     // 获取最小的点之后
     result->distance = minSize;
 
-    if (minppy[0] == -1 || minppy[1] == -1) {
+    if (minSize == INFINITY) {
         int tmp[2] = {-1, -1};
         dotCpy(result->p1, tmp);
         dotCpy(result->p2, tmp);
+        result->next = NULL;
     }
     else {
-        dotCpy(result->p1, sortedY[minppy[0]]);
-        dotCpy(result->p2, sortedY[minppy[1]]);
+        dotCpy(result->p1, sortedY[minppy[0][0]]);
+        dotCpy(result->p2, sortedY[minppy[0][1]]);
+        pointpair * tmp = result;
+        for (int i=1; i <= currPos; ++i) {
+            tmp->next = new pointpair;
+            tmp = tmp->next;
+            tmp->next = NULL;
+
+            dotCpy(tmp->p1, sortedY[minppy[i][0]]);
+            dotCpy(tmp->p2, sortedY[minppy[i][1]]);
+            tmp->distance = minSize;
+        }
     }
 
 }
@@ -237,6 +255,7 @@ void NearestPoint::getMinPart(bound &bd, pointpair *result) {
         getMinPart(bdright, ppright);
 
         // 分割完毕 求分割边界的最小值
+        // 如果是多个节点的话
         getMinMerge(bdleft, bdright, ppleft, ppright, ppmerge);
         int mflag = getMinPointPair(ppleft, ppmerge, ppright);
 
@@ -245,30 +264,112 @@ void NearestPoint::getMinPart(bound &bd, pointpair *result) {
             result->distance = ppleft->distance;
             dotCpy(result->p1, ppleft->p1);
             dotCpy(result->p2, ppleft->p2);
+            result->next = ppleft->next;
+
+            delete ppleft;
+            // 释放内存有些不太好弄 除非全部变成深copy
+
+//            freeppArr(ppright);
+//            freeppArr(ppmerge);
         }
         else if (mflag == 0) {
             // 中间最小值
             result->distance = ppmerge->distance;
             dotCpy(result->p1, ppmerge->p1);
             dotCpy(result->p2, ppmerge->p2);
+            result->next = ppmerge->next;
+
+            delete ppmerge;
+
+//            freeppArr(ppright);
+//            freeppArr(ppleft);
         }
         else {
             // 右边的最小值
             result->distance = ppright->distance;
             dotCpy(result->p1, ppright->p1);
             dotCpy(result->p2, ppright->p2);
+            result->next = ppright->next;
+
+            delete ppright;
+//            freeppArr(ppleft);
+//            freeppArr(ppmerge);
         }
+
     }
 }
 
 int NearestPoint::getMinPointPair(pointpair *pp1, pointpair *pp2, pointpair *pp3) {
     if (pp1->distance <= pp2->distance && pp1->distance <= pp3->distance) {
+        pointpair * hehe = pp1->next;
+        pointpair * prev = pp1;
+
+        if (pp1->distance == pp2->distance) {
+            while (hehe != NULL) {
+                prev = hehe;
+                hehe = pp1->next;
+            }
+            // 将两个点中的所有点全部加进去
+            prev->next = pp2;
+        }
+
+        if (pp1->distance == pp3->distance) {
+            hehe = prev->next;
+            while (hehe != NULL) {
+                prev = hehe;
+                hehe = pp1->next;
+            }
+
+            prev->next = pp3;
+        }
         return -1;
     }
     else if (pp2->distance <= pp1->distance && pp2->distance <= pp3->distance) {
+        pointpair * hehe = pp2->next;
+        pointpair * prev = pp2;
+
+        if (pp2->distance == pp1->distance) {
+            while (hehe != NULL) {
+                prev = hehe;
+                hehe = pp2->next;
+            }
+            // 将两个点中的所有点全部加进去
+            prev->next = pp1;
+        }
+
+        if (pp2->distance == pp3->distance) {
+            hehe = prev->next;
+            while (hehe != NULL) {
+                prev = hehe;
+                hehe = pp2->next;
+            }
+
+            prev->next = pp3;
+        }
         return 0;
     }
     else if (pp3->distance <= pp1->distance && pp3->distance <= pp2->distance) {
+        pointpair * hehe = pp3->next;
+        pointpair * prev = pp3;
+
+        if (pp3->distance == pp1->distance) {
+            while (hehe != NULL) {
+                prev = hehe;
+                hehe = pp3->next;
+            }
+            // 将两个点中的所有点全部加进去
+            prev->next = pp1;
+        }
+
+        if (pp3->distance == pp2->distance) {
+            hehe = prev->next;
+            while (hehe != NULL) {
+                prev = hehe;
+                hehe = pp3->next;
+            }
+
+            prev->next = pp2;
+        }
         return 1;
     }
     // 返回2 表示出错
@@ -295,11 +396,49 @@ void NearestPoint::printSortedY() {
         cout << sortedY[i][0] << ", " << sortedY[i][1] << endl;
     }
 }
+int NearestPoint::loadNext() {
+    if (arrNum > currProcess+1) {
+        ++currProcess;
+    }
+    else {
+        return -1;
+    }
+    freeArray(sortedX, pSum);
+    freeArray(sortedY, pSum);
+
+    pSum = arrSize[currProcess];
+    sortedX = initArray(pSum, 2);
+    sortedY = initArray(pSum, 2);
+
+    deepCopy(initialDotArr.at(currProcess), sortedX, pSum);
+    deepCopy(initialDotArr.at(currProcess), sortedY, pSum);
+
+    // 先按照x进行排序 使用内置的排序算法
+    sort(sortedX, sortedX+pSum, sortFunc_x);
+    sort(sortedY, sortedY+pSum, sortFunc_y);
+
+    return 0;
+}
 void NearestPoint::output(char * path) {
     outputFile.open(path);
     if (outputFile.fail()) {
         cout << "Open output File failed!" << endl;
         exit(-1);
     }
-
+    // 读取完毕之后就开始处理
+    for (unsigned long i=currProcess; i < arrNum; ++i) {
+        pointpair * pp = new pointpair;
+        printSortedX();
+        getNearestPoint(pp);
+        // 写入最小点集合
+        pointpair * tmp = pp;
+        while (tmp != NULL) {
+            outputFile << tmp->p1[0] << ' ' << tmp->p1[1] << ' ' << tmp->p2[0] << ' ' << tmp->p2[1] << '|';
+            tmp = tmp->next;
+        }
+        outputFile << '\n';
+        freeppArr(pp);
+        loadNext();
+    }
+    outputFile.close();
 }

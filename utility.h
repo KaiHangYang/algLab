@@ -54,6 +54,7 @@ private:
     void deepCopy(int ** in, int ** out, int sum, int start=0);
 
     // 取 >= start 和 < end的点数目
+    int loadNext(); // 成功返回0 不成功返回-1
     void caleBound(bound &bd);
     // 返回值是是否分化成功等
     int split(const bound &bdin, bound &bdleft, bound &bdright);
@@ -126,6 +127,7 @@ public:
         // 先按照x进行排序 使用内置的排序算法
         sort(sortedX, sortedX+sum, sortFunc_x);
         sort(sortedY, sortedY+sum, sortFunc_y);
+        inputFile.close();
     }
     // 析构
 /*    ~NearestPoint() {
