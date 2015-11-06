@@ -56,15 +56,18 @@ void NearestPoint::deepCopy(int **in, int **out, int sum, int start) {
 }
 
 
-void NearestPoint::caleBound(bound &bd) {
+void NearestPoint::caleBound(bound &bd, int i) {
     bd.sum = 0;
 
     for (int i=0; i != pSum; ++i) {
-        if (sortedX[i][0] >= bd.left && sortedX[i][0] < bd.right) {
+        if (i == 0 && sortedX[i][0] >= bd.left && sortedX[i][0] < bd.right) {
             if (bd.sum == 0) {
                 bd.dotPos = i;
             }
             ++bd.sum;
+        }
+        else if (i == 1 && sortedX[i][0] >= bd.left && sortedX[i][0] <= bd.right) {
+
         }
         else if (sortedX[i][0] >= bd.right){
             break;
@@ -128,31 +131,67 @@ void NearestPoint::getMinMerge(const bound &bdl, const bound &bdr, const pointpa
     bmerger.right = splitX + dis;
 
     // 在这里如果边界变的太大的话就会出问题
+    // caleBound函数根本不能用...
 
     if (bmergel.left < bdl.left) {
         bmergel.left = bdl.left;
+        bmergel.dotPos = bdl.dotPos;
+        bmergel.sum = bdl.sum;
+    }
+    else {
+        // 如果边界小的话
+        bmergel.sum = 0;
+        bmergel.dotPos = -1;
+        for (int i=bdl.dotPos; i != (bdl.sum+bdl.dotPos); ++i) {
+            if (sortedX[i][0] >= bmergel.left && sortedX[i][0] <= bmergel.right) {
+                if (bmergel.sum == 0) {
+                    bmergel.dotPos = i;
+                }
+                ++bmergel.sum;
+            }
+        }
     }
 
     if (bmerger.right > bdr.right) {
         bmerger.right = bdr.right;
+        bmerger.dotPos = bdr.dotPos;
+        bmerger.sum = bdr.sum;
     }
+    else {
+        //如果边界小得话
+        bmerger.sum = 0;
+        for (int i=bdr.dotPos; i != (bdr.sum+bdr.dotPos); ++i) {
+            if (sortedX[i][0] >= bmerger.left && sortedX[i][0] <= bmerger.right) {
+                if (bmerger.sum == 0) {
+                    bmerger.dotPos = i;
+                }
+                ++bmerger.sum;
+            }
+        }
 
-    caleBound(bmergel);
-    caleBound(bmerger);
+    }
 
     // 计算边界内部的最小边界
     vector<int> pyl, pyr;
+    int pylflag[bmergel.sum];
+    int pyrflag[bmerger.sum];
+    memset(pylflag, 0, bmergel.sum* sizeof(int));
+    memset(pyrflag, 0, bmerger.sum* sizeof(int));
     // 若是没有最小的话就设置result的长度为INFINITY
     for (int i=0; i != pSum; ++i) {
         for (int j=0, p=bmergel.dotPos; j != bmergel.sum; ++j, ++p) {
-            if (sortedY[i][0] == sortedX[p][0] && sortedY[i][1] == sortedX[p][1]) {
+            if (pylflag[j] == 0 && sortedY[i][0] == sortedX[p][0] && sortedY[i][1] == sortedX[p][1]) {
+                pylflag[j] = 1;
                 pyl.push_back(i);
+                break;
             }
         }
 
         for (int j=0, p=bmerger.dotPos; j != bmerger.sum; ++j, ++p) {
-            if (sortedY[i][0] == sortedX[p][0] && sortedY[i][1] == sortedX[p][1]) {
+            if (pyrflag[j] == 0 && sortedY[i][0] == sortedX[p][0] && sortedY[i][1] == sortedX[p][1]) {
+                pyrflag[j] = 1;
                 pyr.push_back(i);
+                break;
             }
         }
     }
@@ -311,7 +350,7 @@ int NearestPoint::getMinPointPair(pointpair *pp1, pointpair *pp2, pointpair *pp3
         if (pp1->distance == pp2->distance) {
             while (hehe != NULL) {
                 prev = hehe;
-                hehe = pp1->next;
+                hehe = prev->next;
             }
             // 将两个点中的所有点全部加进去
             prev->next = pp2;
@@ -321,7 +360,7 @@ int NearestPoint::getMinPointPair(pointpair *pp1, pointpair *pp2, pointpair *pp3
             hehe = prev->next;
             while (hehe != NULL) {
                 prev = hehe;
-                hehe = pp1->next;
+                hehe = prev->next;
             }
 
             prev->next = pp3;
@@ -335,7 +374,7 @@ int NearestPoint::getMinPointPair(pointpair *pp1, pointpair *pp2, pointpair *pp3
         if (pp2->distance == pp1->distance) {
             while (hehe != NULL) {
                 prev = hehe;
-                hehe = pp2->next;
+                hehe = prev->next;
             }
             // 将两个点中的所有点全部加进去
             prev->next = pp1;
@@ -345,7 +384,7 @@ int NearestPoint::getMinPointPair(pointpair *pp1, pointpair *pp2, pointpair *pp3
             hehe = prev->next;
             while (hehe != NULL) {
                 prev = hehe;
-                hehe = pp2->next;
+                hehe = prev->next;
             }
 
             prev->next = pp3;
@@ -359,7 +398,7 @@ int NearestPoint::getMinPointPair(pointpair *pp1, pointpair *pp2, pointpair *pp3
         if (pp3->distance == pp1->distance) {
             while (hehe != NULL) {
                 prev = hehe;
-                hehe = pp3->next;
+                hehe = prev->next;
             }
             // 将两个点中的所有点全部加进去
             prev->next = pp1;
@@ -369,7 +408,7 @@ int NearestPoint::getMinPointPair(pointpair *pp1, pointpair *pp2, pointpair *pp3
             hehe = prev->next;
             while (hehe != NULL) {
                 prev = hehe;
-                hehe = pp3->next;
+                hehe = prev->next;
             }
 
             prev->next = pp2;

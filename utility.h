@@ -35,6 +35,7 @@ bool sortFunc_x(const int *a, const int *b);
 bool sortFunc_y(const int *a, const int *b);
 
 // 距离没有开平方，最后再求
+// TODO 因为每个点的都没有标识,导致重复的点可能被计算多次,这个需要将每个点添加唯一标示符
 class NearestPoint {
 private:
     // 总共的点数
@@ -55,7 +56,7 @@ private:
 
     // 取 >= start 和 < end的点数目
     int loadNext(); // 成功返回0 不成功返回-1
-    void caleBound(bound &bd);
+    void caleBound(bound &bd, int i);
     // 返回值是是否分化成功等
     int split(const bound &bdin, bound &bdleft, bound &bdright);
     // 获取区间内部最小距离
