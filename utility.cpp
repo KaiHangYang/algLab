@@ -94,12 +94,16 @@ int NearestPoint::split(const bound &bdin, bound &bdleft, bound &bdright) {
 //        bdleft.dotPos = bdin.dotPos;
         bdleft.left = bdin.left;
         bdleft.right = splitLine;
-        caleBound(bdleft);
+//        caleBound(bdleft);
+        bdleft.dotPos = bdin.dotPos;
+        bdleft.sum = pos - bdin.dotPos+1;
 
 //        bdright.dotPos = bdin.dotPos+bdin.sum;
         bdright.left = splitLine;
         bdright.right = bdin.right;
-        caleBound(bdright);
+        bdright.dotPos = pos + 1;
+        bdright.sum = bdin.sum - bdleft.sum;
+//        caleBound(bdright);
 
         return 1;
     }
