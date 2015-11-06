@@ -139,6 +139,7 @@ public:
     void output(char * path);
     void printSortedX();
     void printSortedY();
+    void printData();
 };
 
 #endif //ALGLAB_UTILITY_H

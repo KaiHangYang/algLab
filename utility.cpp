@@ -60,13 +60,13 @@ void NearestPoint::caleBound(bound &bd) {
     bd.sum = 0;
 
     for (int i=0; i != pSum; ++i) {
-        if (sortedX[i][0] >= bd.left && sortedX[i][0] <= bd.right) {
+        if (sortedX[i][0] >= bd.left && sortedX[i][0] < bd.right) {
             if (bd.sum == 0) {
                 bd.dotPos = i;
             }
             ++bd.sum;
         }
-        else if (sortedX[i][0] > bd.right){
+        else if (sortedX[i][0] >= bd.right){
             break;
         }
     }
@@ -428,6 +428,7 @@ void NearestPoint::output(char * path) {
     // 读取完毕之后就开始处理
     for (unsigned long i=currProcess; i < arrNum; ++i) {
         pointpair * pp = new pointpair;
+        pp->next = NULL;
         printSortedX();
         getNearestPoint(pp);
         // 写入最小点集合
@@ -441,4 +442,15 @@ void NearestPoint::output(char * path) {
         loadNext();
     }
     outputFile.close();
+}
+void NearestPoint::printData() {
+
+    //输出所有获取的数据
+    for (int i=currProcess; i < arrNum; ++i) {
+        cout << "Size:" << arrSize[i] << "--";
+        for (int j=0; j != arrSize[i]; ++j) {
+            cout << "<" << initialDotArr.at(i)[j][0] << " " << initialDotArr.at(i)[j][1] << ">" << ' ';
+        }
+        cout << endl;
+    }
 }
