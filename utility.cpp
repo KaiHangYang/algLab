@@ -5,6 +5,10 @@
 #include "utility.h"
 
 
+/**
+ * 最近点对部分
+ **/
+
 void freeppArr(pointpair * pp) {
     pointpair * ph = pp->next, * tmp;
 
@@ -496,4 +500,172 @@ void NearestPoint::printData() {
         }
         cout << endl;
     }
+}
+
+/*
+ * 大数相乘部分
+ */
+void BigNum::base_add (string &a, string &b, string &out) {
+    int n;
+    out.empty();
+    if (a.size() > b.size()) {
+        n = a.size();
+        b.insert(0, n-b.size(), '0');
+    }
+    else if (a.size() < b.size()) {
+        n = b.size();
+        a.insert(0, n-a.size(), '0');
+    }
+    else {
+        n = a.size();
+    }
+    int c = 0;
+    int sum = 0;
+
+    for (int i=n-1; i >= 0; --i) {
+
+        sum = a.at(i) + b.at(i) - 2*'0' + c;
+        c = sum / 10;
+        sum %= 10;
+        out.insert(0, 1, sum+'0');
+    }
+
+    if (c != 0) {
+        out.insert(0, 1, c+'0');
+    }
+
+    int zero_pos = out.find_first_not_of('0');
+    if (string(out.size(), '0') == out) {
+        // 全是0的情况
+        zero_pos = out.size() - 1;
+        out.erase(1, zero_pos);
+    }
+    else {
+        out.erase(0, zero_pos);
+    }
+}
+
+int BigNum::base_minus (string &a, string &b, string &out) {
+    int n;
+    int flag = 0;
+
+    out.empty();
+
+    if (a.size() > b.size()) {
+        n = a.size();
+        b.insert(0, n-b.size(), '0');
+    }
+    else if (a.size() < b.size()) {
+        n = b.size();
+        a.insert(0, n-a.size(), '0');
+    }
+    else {
+        n = a.size();
+    }
+
+    if (a < b) {
+        // 1表示结果为负数
+        flag = 1;
+    }
+
+    int c = 0;
+    int sum = 0;
+    for (int i=n-1; i >= 0; --i) {
+        if (flag == 1) {
+            sum = b.at(i) - a.at(i) - c;
+        }
+        else {
+            sum = a.at(i) - b.at(i) - c;
+        }
+
+        if (sum < 0) {
+            // 顶多借一位
+            c = -sum/10 + 1;
+            sum += (10*c);
+        }
+        else {
+            c = 0;
+        }
+        out.insert(0, 1, sum+'0');
+    }
+    // 对零进行特殊处理
+    int zero_pos = out.find_first_not_of('0');
+    if (string(out.size(), '0') == out) {
+        // 全是0的情况
+        zero_pos = out.size() - 1;
+        out.erase(1, zero_pos);
+    }
+    else {
+        out.erase(0, zero_pos);
+    }
+
+    return flag;
+}
+// 对运算进行重载
+BigNum BigNum::operator+(BigNum &a) {
+    //对每种情况的运算进行处理
+    string tmp;
+    int tmp_flag;
+
+    if (flag == a.flag) {
+        base_add(data, a.data, tmp);
+        tmp_flag = flag;
+    }
+    else if (flag == 0) {
+        // 前者为正数 后者为负数
+        tmp_flag = base_minus(data, a.data, tmp);
+    }
+    else {
+        // 后者为正数
+        tmp_flag = base_minus(a.data, data, tmp);
+    }
+    // 计算完毕之后
+    return BigNum(tmp, tmp_flag);
+}
+BigNum BigNum::operator-(BigNum &a) {
+    string tmp;
+    int tmp_flag;
+
+    if (flag == a.flag) {
+        tmp_flag = base_minus(data, a.data, tmp);
+
+        if (tmp_flag == flag) {
+            tmp_flag = 0;
+        }
+        else {
+            tmp_flag = 1;
+        }
+    }
+    else if (flag == 0) {
+        // 如果前者为正数
+        base_add(data, a.data, tmp);
+        tmp_flag = 0;
+    }
+    else {
+        // 如果前者为负数的话
+        tmp_flag = 1;
+        base_add(data, a.data, tmp);
+    }
+
+    return BigNum(tmp, tmp_flag);
+}
+BigNum BigNum::operator*(BigNum &a) {
+    // 乘法运算符重载
+    
+}
+BigNum BigNum::operator-() {
+    // 单目减号运算符
+    int tmp = (flag == 0)?1:0;
+    return BigNum(data, tmp);
+}
+BigNum BigNum::operator+() {
+    // 单目正号运算符
+    return BigNum(data, flag);
+}
+BigNum::operator const char *() {
+    BigNum tmp(data, flag);
+    if (flag == 1) {
+        tmp.data.insert(0, 1, '-');
+    }
+    return tmp.data.c_str();
 }
