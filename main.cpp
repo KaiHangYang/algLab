@@ -38,8 +38,10 @@ using namespace std;
 
 int main() {
     // 1表示负数
-    BigNum a("1982712871728361278361", 1);
-    BigNum b("123891278293423784", 0);
-    cout << (a*b) << endl;
+//    BigNum a("1982712871728361278361", 1);
+//    BigNum b("123891278293423784", 0);
+//    cout << (a*b) << endl;
+    BigNum::calcGrp("/home/fog/Dev/algLab/1.dat", "/home/fog/Dev/algLab/2.dat");
+
     return 0;
 }

@@ -167,6 +167,8 @@ public:
     operator const char *();
     BigNum *operator = (BigNum a);
     BigNum operator <<(unsigned int i); // 乘以10的多少次方的话就不使用乘法了，直接“移位”
+    // 文件相关的操作
+    static void calcGrp(string in, string out);
 };
 
 #endif //ALGLAB_UTILITY_H

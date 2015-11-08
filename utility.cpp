@@ -771,3 +771,89 @@ BigNum *BigNum::operator=(BigNum a) {
     this->flag = a.flag;
     return this;
 }
+void BigNum::calcGrp(string in, string out) {
+    ifstream fin;
+    ofstream fout;
+
+    fin.open(in);
+    fout.open(out);
+
+    // 开始读取
+    string line, lineData;
+    getline(fin, line);
+    int lineNum = atoi(line.c_str());
+    vector<string *> numArr;
+    vector<int> opArr;
+
+    for (int j=0; j != lineNum; ++j) {
+        int op;
+        string num1, num2;
+        getline(fin, lineData);
+
+        unsigned long i = lineData.find_first_not_of(' ');
+        if (i != 0) {
+            lineData.erase(0, i+1);
+        }
+        i = lineData.find_first_of(' ');
+        num1.assign(lineData.substr(0, i));
+        lineData.erase(0, i+1);
+
+        i = lineData.find_first_not_of(' ');
+        if (i != 0) {
+            lineData.erase(0, i+1);
+        }
+        i = lineData.find_first_of(' ');
+        num2.assign(lineData.substr(0, i));
+        lineData.erase(0, i+1);
+
+        i = lineData.find_first_not_of(' ');
+        if (i != 0) {
+            lineData.erase(0, i+1);
+        }
+
+        sscanf(lineData.c_str(), "%d", &op);
+
+        // 找到之后就存到数组里面
+        string *sarr_tmp = new string[2];
+        sarr_tmp[0].assign(num1);
+        sarr_tmp[1].assign(num2);
+
+        numArr.push_back(sarr_tmp);
+        opArr.push_back(op);
+    }
+    fin.close();
+    // 储存完毕之后检查数据 使用完毕之后要释放内存
+    for (int i=0; i != numArr.size(); ++i) {
+        cout << numArr.at(i)[0] << " " << numArr.at(i)[1] << " " << opArr.at(i) << endl;
+    }
+    // 开始计算
+    for (int i=0; i != opArr.size(); ++i) {
+        int signA(0), signB(0);
+        if (numArr.at(i)[0].at(0) == '-') {
+            numArr.at(i)[0].erase(0, 1);
+            signA = 1;
+        }
+        if (numArr.at(i)[1].at(0) == '-') {
+            numArr.at(i)[1].erase(0, 1);
+            signB = 1;
+        }
+        BigNum a(numArr.at(i)[0], signA);
+        BigNum b(numArr.at(i)[1], signB);
+        if (opArr.at(i) == 1) {
+            // 加法
+            fout << (a+b);
+        }
+        else if (opArr.at(i) == 2) {
+            // 减法
+            fout << (a-b);
+        }
+        else if (opArr.at(i) == 3) {
+            fout << (a*b);
+        }
+
+        if (i != opArr.size() - 1) {
+            fout << endl;
+        }
+    }
+    fout.close();
+}
