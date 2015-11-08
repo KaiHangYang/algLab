@@ -601,8 +601,27 @@ int BigNum::base_minus (string &a, string &b, string &out) {
 
     return flag;
 }
+bool BigNum::isZero() {
+    if (string(data.size(), '0') == data) {
+        return true;
+    }
+    else {
+        return false;
+    }
+}
+void BigNum::clearZero() {
+    int zero_pos = data.find_first_not_of('0');
+    if (isZero()) {
+        // 全是0的情况
+        zero_pos = data.size() - 1;
+        data.erase(1, zero_pos);
+    }
+    else {
+        data.erase(0, zero_pos);
+    }
+}
 // 对运算进行重载
-BigNum BigNum::operator+(BigNum &a) {
+BigNum BigNum::operator+(BigNum a) {
     //对每种情况的运算进行处理
     string tmp;
     int tmp_flag;
@@ -622,7 +641,7 @@ BigNum BigNum::operator+(BigNum &a) {
     // 计算完毕之后
     return BigNum(tmp, tmp_flag);
 }
-BigNum BigNum::operator-(BigNum &a) {
+BigNum BigNum::operator-(BigNum a) {
     string tmp;
     int tmp_flag;
 
@@ -649,9 +668,87 @@ BigNum BigNum::operator-(BigNum &a) {
 
     return BigNum(tmp, tmp_flag);
 }
-BigNum BigNum::operator*(BigNum &a) {
+BigNum BigNum::operator*(BigNum a) {
     // 乘法运算符重载
-    
+
+    // 清除前面的0位
+    this->clearZero();
+    a.clearZero();
+
+    // 对×0做特殊处理
+    if (this->isZero() || a.isZero()) {
+        return BigNum("0", 0);
+    }
+    int sign = (this->flag == a.flag)?0:1; // 算出计算过后的符号
+    // 对×1做处理
+    if (data == string("1")) {
+        return BigNum(a.data, sign);
+    }
+    else if (a.data == string("1")) {
+        return BigNum(data, sign);
+    }
+    // 正式的乘法
+
+    // 先补零
+    int n;
+    if (data.size() > a.data.size()) {
+        n = data.size();
+        if (n%2 != 0) {
+            // 如果不是2的倍数的话就进行补零操作
+            ++n;
+            data.insert(0, 1, '0');
+        }
+        a.data.insert(0, n-a.data.size(), '0');
+    }
+    else if (data.size() < a.data.size()) {
+        n = a.data.size();
+        if (n%2 != 0) {
+            ++n;
+            a.data.insert(0, 1, '0');
+        }
+        data.insert(0, n-data.size(), '0');
+    }
+    else {
+        n = data.size();
+        if (n%2 != 0) {
+            ++n;
+            data.insert(0, 1, '0');
+            a.data.insert(0, 1, '0');
+        }
+    }
+
+    // 这里以4位数的乘法作为基础，不会超过int
+    if (n <= 4) {
+        int num1, num2;
+        char tmp[11];
+        num1 = atoi(data.c_str());
+        num2 = atoi(a.data.c_str());
+        sprintf(tmp, "%d", num1*num2);
+        return BigNum(tmp, sign);
+    }
+    else {
+        // 其余的就需要二分计算
+        // 先计算AC BD
+        BigNum A(data.substr(0, n/2), 0);
+        BigNum B(data.substr(n/2), 0);
+        BigNum C(a.data.substr(0, n/2), 0);
+        BigNum D(a.data.substr(n/2), 0);
+
+        BigNum AC = (A*C);
+        BigNum BD = (B*D);
+        BigNum A_B = (A-B);
+        BigNum D_C = (D-C);
+
+        BigNum result = (AC << n) + ((A_B*D_C + AC+BD)<<(n/2)) + BD;
+        result.flag = sign;
+        return result;
+    }
+
+}
+BigNum BigNum::operator <<(unsigned int num) {
+    BigNum tmp = *this;
+    tmp.data.insert(tmp.data.size(), num, '0');
+    return tmp;
 }
 BigNum BigNum::operator-() {
     // 单目减号运算符
@@ -668,4 +765,9 @@ BigNum::operator const char *() {
         tmp.data.insert(0, 1, '-');
     }
     return tmp.data.c_str();
+}
+BigNum *BigNum::operator=(BigNum a) {
+    this->data.assign(a.data);
+    this->flag = a.flag;
+    return this;
 }

@@ -13,6 +13,7 @@
 #include <string>
 #include <stdlib.h>
 #include <string.h>
+#include <arpa/nameser.h>
 
 using namespace std;
 
@@ -151,18 +152,21 @@ private:
     int flag; // 1 表示是负数 0 表示正数
     void base_add(string &a, string &b, string &out);
     int base_minus(string &a, string &b, string &out);
+    bool isZero();
+    void clearZero();
 public:
     // 初始化 默认数为正数
+    BigNum() = default;
     BigNum(string data, int flag=0): data(data), flag(flag) {};
     // 运算符重载
-    BigNum operator + (BigNum &a); // 乘法运算符
-    BigNum operator - (BigNum &a);
-    BigNum operator * (BigNum &a);
+    BigNum operator + (BigNum a); // 乘法运算符
+    BigNum operator - (BigNum a);
+    BigNum operator * (BigNum a);
     BigNum operator - ();
     BigNum operator + ();
-    string getData() { return data; };
-    int getFlag() { return flag; };
     operator const char *();
+    BigNum *operator = (BigNum a);
+    BigNum operator <<(unsigned int i); // 乘以10的多少次方的话就不使用乘法了，直接“移位”
 };
 
 #endif //ALGLAB_UTILITY_H
